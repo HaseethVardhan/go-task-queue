@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"context"
+	"time"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/queue"
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
@@ -17,6 +19,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var wg sync.WaitGroup
 
 	for i := 1; i <= 3; i++ {
@@ -25,7 +30,7 @@ func main() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			w.Start()
+			w.Start(ctx)
 		}()
 	}
 
@@ -51,5 +56,12 @@ func main() {
 
 	fmt.Println("Submitted all tasks.")
 
+	for q.Len() > 0 {
+		time.Sleep(100*time.Millisecond)
+	}
+
+	cancel()
 	wg.Wait()
+
+	fmt.Println("All workers stopped.")
 }

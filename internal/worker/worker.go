@@ -3,6 +3,7 @@ package worker
 import (
 	"fmt"
 	"time"
+	"context"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/queue"
 )
@@ -19,8 +20,15 @@ func New(id int, q *queue.Queue) *Worker {
 	}
 }
 
-func (w *Worker) Start() {
+func (w *Worker) Start(ctx context.Context) {
 	for {
+		select {
+		case <- ctx.Done():
+			fmt.Printf("Worker %d shutting down\n", w.ID)
+			return
+		default:
+		}
+
 		t, ok := w.Queue.Dequeue()
 		if !ok {
 			time.Sleep(100 * time.Millisecond)
