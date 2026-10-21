@@ -1,4 +1,4 @@
-package Handler
+package handler
 
 import (
 	"context"
@@ -17,7 +17,7 @@ type Registry struct {
 }
 
 func NewRegistry() *Registry {
-	return &Registry {
+	return &Registry{
 		handlers: make(map[string]Handler),
 	}
 }

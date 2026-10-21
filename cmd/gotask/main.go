@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
-	"context"
 	"time"
 
+	"github.com/HaseethVardhan/go-task-queue/internal/handler"
 	"github.com/HaseethVardhan/go-task-queue/internal/queue"
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
 	"github.com/HaseethVardhan/go-task-queue/internal/worker"
@@ -24,8 +25,20 @@ func main() {
 
 	var wg sync.WaitGroup
 
+	registry := handler.NewRegistry()
+
+	err = registry.Register("demo", func(ctx context.Context, t task.Task) error {
+		fmt.Printf("Executing task %s with payload: %s\n", t.ID, t.Payload)
+		time.Sleep(time.Second)
+		return nil
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for i := 1; i <= 3; i++ {
-		w := worker.New(i, q)
+		w := worker.New(i, q, registry)
 
 		wg.Add(1)
 		go func() {
@@ -44,8 +57,8 @@ func main() {
 		}
 
 		t := task.Task{
-			ID: fmt.Sprintf("task-%d", i),
-			Type: "demo",
+			ID:      fmt.Sprintf("task-%d", i),
+			Type:    "demo",
 			Payload: payload,
 		}
 
@@ -57,7 +70,7 @@ func main() {
 	fmt.Println("Submitted all tasks.")
 
 	for q.Len() > 0 {
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	cancel()

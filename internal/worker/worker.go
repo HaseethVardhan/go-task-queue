@@ -1,29 +1,32 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"time"
-	"context"
 
+	"github.com/HaseethVardhan/go-task-queue/internal/handler"
 	"github.com/HaseethVardhan/go-task-queue/internal/queue"
 )
 
 type Worker struct {
-	ID int
-	Queue *queue.Queue
+	ID       int
+	Queue    *queue.Queue
+	Registry *handler.Registry
 }
 
-func New(id int, q *queue.Queue) *Worker {
+func New(id int, q *queue.Queue, registry *handler.Registry) *Worker {
 	return &Worker{
-		ID:    id,
-		Queue: q,
+		ID:       id,
+		Queue:    q,
+		Registry: registry,
 	}
 }
 
 func (w *Worker) Start(ctx context.Context) {
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			fmt.Printf("Worker %d shutting down\n", w.ID)
 			return
 		default:
@@ -37,9 +40,16 @@ func (w *Worker) Start(ctx context.Context) {
 
 		fmt.Printf("Worker %d started task %s (%s)\n", w.ID, t.ID, t.Type)
 
-		fmt.Printf("Payload: %s\n", t.Payload)
+		h, err := w.Registry.Get(t.Type)
+		if err != nil {
+			fmt.Printf("Worker %d: cannot execute task %s: %v\n", w.ID, t.ID, err)
+			continue
+		}
 
-		time.Sleep(1 * time.Second)
+		if err := h(ctx, t); err != nil {
+			fmt.Printf("Worker %d: task %s failed: %v\n", w.ID, t.ID, err)
+			continue
+		}
 
 		fmt.Printf("Worker %d completed task %s\n", w.ID, t.ID)
 	}
