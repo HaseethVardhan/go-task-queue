@@ -13,5 +13,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  migrate:
+    image: migrate/migrate:v4.18.3
+    volumes:
+      - ./migrations:/migrations:ro
+    entrypoint: ["migrate"]
+    profiles: ["tools"]
+
 volumes:
   postgres_data:
