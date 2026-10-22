@@ -10,9 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HaseethVardhan/go-task-queue/internal/handler"
 	"github.com/HaseethVardhan/go-task-queue/internal/service"
 	"github.com/HaseethVardhan/go-task-queue/internal/storage"
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
+	"github.com/HaseethVardhan/go-task-queue/internal/worker"
 )
 
 func main() {
@@ -30,15 +32,38 @@ func main() {
 	}
 
 	dbCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
 	db, err := storage.OpenPostgres(dbCtx, dbURL)
+	cancel()
 	if err != nil {
 		log.Fatalf("connect to database: %v", err)
 	}
+	defer db.Close()
 
 	repo := storage.NewTaskRepository(db)
 	taskService := service.NewTaskService(repo)
+
+	registry := handler.NewRegistry()
+
+	if err := registry.Register("demo", func(
+		ctx context.Context,
+		t task.Task,
+	) error {
+		var payload struct {
+			Message string `json:"message"`
+		}
+
+		if err := json.Unmarshal(t.Payload, &payload); err != nil {
+			return fmt.Errorf("decode demo payload: %w", err)
+		}
+
+		log.Printf("Executing task %s: %s", t.ID, payload.Message)
+		return nil
+	}); err != nil {
+		log.Fatalf("register demo handler: %v", err)
+	}
+
+	w := worker.New(1, repo, registry)
+	go w.Start(ctx)
 
 	newTask := task.Task{
 		ID:      fmt.Sprintf("demo-%d", time.Now().UnixNano()),
@@ -50,68 +75,9 @@ func main() {
 		log.Fatalf("submit task: %v", err)
 	}
 
-	log.Printf("Task %s submitted successfully", newTask.ID)
+	log.Printf("Submitted task %s", newTask.ID)
+	log.Println("GoTask is running. Press Ctrl+C to stop.")
 
-	// q, err := queue.New(10)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
-
-	// var wg sync.WaitGroup
-
-	// registry := handler.NewRegistry()
-
-	// err = registry.Register("demo", func(ctx context.Context, t task.Task) error {
-	// 	fmt.Printf("Executing task %s with payload: %s\n", t.ID, t.Payload)
-	// 	time.Sleep(time.Second)
-	// 	return nil
-	// })
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// for i := 1; i <= 3; i++ {
-	// 	w := worker.New(i, q, registry)
-
-	// 	wg.Add(1)
-	// 	go func() {
-	// 		defer wg.Done()
-	// 		w.Start(ctx)
-	// 	}()
-	// }
-
-	// for i := 1; i <= 10; i++ {
-	// 	payload, err := json.Marshal(map[string]string{
-	// 		"message": fmt.Sprintf("Hello from task %d", i),
-	// 	})
-
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	t := task.Task{
-	// 		ID:      fmt.Sprintf("task-%d", i),
-	// 		Type:    "demo",
-	// 		Payload: payload,
-	// 	}
-
-	// 	if err := q.Enqueue(t); err != nil {
-	// 		log.Printf("Failed to enqueue %s: %v", t.ID, err)
-	// 	}
-	// }
-
-	// fmt.Println("Submitted all tasks.")
-
-	// for q.Len() > 0 {
-	// 	time.Sleep(100 * time.Millisecond)
-	// }
-
-	// cancel()
-	// wg.Wait()
-
-	// fmt.Println("All workers stopped.")
+	<-ctx.Done()
+	log.Println("Shutting down GoTask...")
 }
