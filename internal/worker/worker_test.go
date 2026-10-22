@@ -3,145 +3,253 @@ package worker
 import (
 	"context"
 	"errors"
+	"reflect"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/handler"
-	"github.com/HaseethVardhan/go-task-queue/internal/queue"
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
 )
 
-func TestWorkerExecutesRegisteredHandler(t *testing.T) {
-	q, err := queue.New(5)
-	if err != nil {
-		t.Fatalf("failed to create queue: %v", err)
+type mockTaskRepository struct {
+	mu          sync.Mutex
+	tasks       []task.Task
+	completed   []string
+	claimErr    error
+	completeErr error
+}
+
+func (m *mockTaskRepository) ClaimNext(
+	ctx context.Context,
+) (task.Task, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return task.Task{}, false, err
 	}
 
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.claimErr != nil {
+		return task.Task{}, false, m.claimErr
+	}
+
+	if len(m.tasks) == 0 {
+		return task.Task{}, false, nil
+	}
+
+	t := m.tasks[0]
+	m.tasks = m.tasks[1:]
+
+	return t, true, nil
+}
+
+func (m *mockTaskRepository) Complete(
+	ctx context.Context,
+	id string,
+) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.completeErr != nil {
+		return m.completeErr
+	}
+
+	m.completed = append(m.completed, id)
+	return nil
+}
+
+func (m *mockTaskRepository) completedIDs() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return append([]string(nil), m.completed...)
+}
+
+func newTestWorker(
+	t *testing.T,
+	repo TaskRepository,
+) (*Worker, *handler.Registry) {
+	t.Helper()
+
 	registry := handler.NewRegistry()
+	w := New(1, repo, registry)
 
-	executed := make(chan string, 1)
+	return w, registry
+}
 
-	err = registry.Register("email", func(ctx context.Context, task task.Task) error {
-		executed <- task.ID
+func TestWorker_ProcessTask_Success(t *testing.T) {
+	repo := &mockTaskRepository{}
+	w, registry := newTestWorker(t, repo)
+
+	var handlerCalled bool
+
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		handlerCalled = true
+
+		if got.ID != "task-001" {
+			t.Errorf("handler received task ID %q, want %q", got.ID, "task-001")
+		}
+
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("failed to register handler: %v", err)
+		t.Fatalf("Register() error = %v", err)
 	}
 
-	if err := q.Enqueue(task.Task{ID: "task-1", Type: "email"}); err != nil {
-		t.Fatalf("failed to enqueue task: %v", err)
+	taskToProcess := task.Task{
+		ID:   "task-001",
+		Type: "email",
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	w := New(1, q, registry)
+	w.processTask(context.Background(), taskToProcess)
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		w.Start(ctx)
-	}()
-
-	select {
-	case id := <-executed:
-		if id != "task-1" {
-			t.Errorf("handler received task ID %q, want %q", id, "task-1")
-		}
-	case <-time.After(time.Second):
-		t.Fatal("worker did not execute the registered handler")
+	if !handlerCalled {
+		t.Fatal("handler was not called")
 	}
 
-	cancel()
+	got := repo.completedIDs()
+	want := []string{"task-001"}
 
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("worker did not shut down after cancellation")
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("completed IDs = %v, want %v", got, want)
 	}
 }
 
-func TestWorkerHandlesHandlerError(t *testing.T) {
-	q, err := queue.New(5)
-	if err != nil {
-		t.Fatalf("failed to create queue: %v", err)
-	}
-	registry := handler.NewRegistry()
+func TestWorker_ProcessTask_HandlerError(t *testing.T) {
+	repo := &mockTaskRepository{}
+	w, registry := newTestWorker(t, repo)
 
-	executed := make(chan struct{}, 1)
+	handlerErr := errors.New("email delivery failed")
 
-	err = registry.Register("email", func(ctx context.Context, task task.Task) error {
-		executed <- struct{}{}
-		return errors.New("simulated handler failure")
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		return handlerErr
 	})
 	if err != nil {
-		t.Fatalf("failed to register handler: %v", err)
+		t.Fatalf("Register() error = %v", err)
 	}
 
-	if err := q.Enqueue(task.Task{ID: "task-1", Type: "email"}); err != nil {
-		t.Fatalf("failed to enqueue task: %v", err)
-	}
+	w.processTask(context.Background(), task.Task{
+		ID:   "task-002",
+		Type: "email",
+	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	w := New(1, q, registry)
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		w.Start(ctx)
-	}()
-
-	select {
-	case <-executed:
-	case <-time.After(time.Second):
-		cancel()
-		t.Fatal("worker did not invoke the handler")
-	}
-
-	cancel()
-
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("worker did not shut down after cancellation")
+	if got := repo.completedIDs(); len(got) != 0 {
+		t.Errorf("completed IDs = %v, want no completed tasks", got)
 	}
 }
 
-func TestWorkerHandlesUnknownTaskType(t *testing.T) {
-	q, err := queue.New(5)
+func TestWorker_ProcessTask_HandlerNotFound(t *testing.T) {
+	repo := &mockTaskRepository{}
+	w, _ := newTestWorker(t, repo)
+
+	w.processTask(context.Background(), task.Task{
+		ID:   "task-003",
+		Type: "unknown",
+	})
+
+	if got := repo.completedIDs(); len(got) != 0 {
+		t.Errorf("completed IDs = %v, want no completed tasks", got)
+	}
+}
+
+func TestWorker_ProcessTask_CompleteError(t *testing.T) {
+	repo := &mockTaskRepository{
+		completeErr: errors.New("database unavailable"),
+	}
+	w, registry := newTestWorker(t, repo)
+
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		return nil
+	})
 	if err != nil {
-		t.Fatalf("failed to create queue: %v", err)
+		t.Fatalf("Register() error = %v", err)
 	}
 
-	registry := handler.NewRegistry()
+	w.processTask(context.Background(), task.Task{
+		ID:   "task-004",
+		Type: "email",
+	})
 
-	if err := q.Enqueue(task.Task{ID: "task-1", Type: "unknown"}); err != nil {
-		t.Fatalf("failed to enqueue task: %v", err)
+	if got := repo.completedIDs(); len(got) != 0 {
+		t.Errorf("completed IDs = %v, want no recorded completions", got)
 	}
+}
+
+func TestWorker_Start_CancelledContext(t *testing.T) {
+	repo := &mockTaskRepository{}
+	w, _ := newTestWorker(t, repo)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	w := New(1, q, registry)
+	cancel()
 
 	done := make(chan struct{})
+
 	go func() {
 		defer close(done)
 		w.Start(ctx)
 	}()
 
-	deadline := time.After(time.Second)
-	for q.Len() != 0 {
-		select {
-		case <-deadline:
-			cancel()
-			t.Fatal("worker did not dequeue the unknown task")
-		case <-time.After(10 * time.Millisecond):
-		}
+	select {
+	case <-done:
+		// Worker exited as expected.
+	case <-time.After(time.Second):
+		t.Fatal("worker did not shut down after context cancellation")
+	}
+}
+
+func TestWorker_Start_ClaimsAndProcessesTask(t *testing.T) {
+	repo := &mockTaskRepository{
+		tasks: []task.Task{
+			{
+				ID:   "task-005",
+				Type: "email",
+			},
+		},
 	}
 
-	cancel()
+	w, registry := newTestWorker(t, repo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		cancel()
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		w.Start(ctx)
+	}()
 
 	select {
 	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("worker did not shut down after cancellation")
+	case <-time.After(2 * time.Second):
+		t.Fatal("worker did not stop after processing the task")
+	}
+
+	got := repo.completedIDs()
+	want := []string{"task-005"}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("completed IDs = %v, want %v", got, want)
 	}
 }
