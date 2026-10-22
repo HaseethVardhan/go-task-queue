@@ -40,7 +40,6 @@ func (s *TaskService) Submit(ctx context.Context, t task.Task) error {
 		return ErrInvalidTaskType
 	}
 
-
 	if err := ctx.Err(); err != nil {
 		return err
 	}

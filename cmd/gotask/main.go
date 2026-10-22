@@ -41,8 +41,8 @@ func main() {
 	taskService := service.NewTaskService(repo)
 
 	newTask := task.Task{
-		ID: fmt.Sprintf("demo-%d", time.Now().UnixNano()),
-		Type: "demo",
+		ID:      fmt.Sprintf("demo-%d", time.Now().UnixNano()),
+		Type:    "demo",
 		Payload: json.RawMessage(`{"message":"Hello from GoTask"}`),
 	}
 

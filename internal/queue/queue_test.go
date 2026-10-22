@@ -2,9 +2,9 @@ package queue
 
 import (
 	"errors"
-	"testing"
-	"sync"
 	"fmt"
+	"sync"
+	"testing"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
 )
@@ -100,7 +100,6 @@ func TestQueueCapacity(t *testing.T) {
 		t.Fatalf("got error %v, want %v", err, ErrQueueFull)
 	}
 }
-
 
 func TestConcurrentEnqueue(t *testing.T) {
 	const goroutines = 100

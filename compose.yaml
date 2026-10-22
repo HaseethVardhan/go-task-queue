@@ -13,6 +13,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  postgres-test:
+    image: postgres:17
+    container_name: gotask-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gotask
+      POSTGRES_PASSWORD: gotask_test_password
+      POSTGRES_DB: gotask_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql
+
   migrate:
     image: migrate/migrate:v4.18.3
     volumes:
@@ -22,3 +35,4 @@ services:
 
 volumes:
   postgres_data:
+  postgres_test_data:

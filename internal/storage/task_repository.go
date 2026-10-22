@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
@@ -59,4 +60,66 @@ func (r *TaskRepository) GetByID(ctx context.Context, id string) (task.Task, err
 
 	t.Payload = json.RawMessage(payload)
 	return t, nil
+}
+
+func (r *TaskRepository) ClaimNext(ctx context.Context) (task.Task, bool, error) {
+	var t task.Task
+	var payload []byte
+
+	err := r.db.QueryRowContext(
+		ctx,
+		`
+		UPDATE tasks
+		SET status = 'processing'
+		WHERE id = (
+			SELECT id
+			FROM tasks
+			WHERE status = 'pending'
+			ORDER BY created_at, id
+			FOR UPDATE SKIP LOCKED
+			LIMIT 1
+		)
+		RETURNING id, type, payload
+		`,
+	).Scan(&t.ID, &t.Type, &payload)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return task.Task{}, false, nil
+		}
+		return task.Task{}, false, fmt.Errorf("claim task: %w", err)
+	}
+
+	t.Payload = payload
+	return t, true, nil
+}
+
+func (r *TaskRepository) Complete(ctx context.Context, id string) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`
+		UPDATE tasks
+		SET status = 'completed'
+		WHERE id = $1 AND status = 'processing'
+		`,
+		id,
+	)
+
+	if err != nil {
+		return fmt.Errorf("complete task: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check completed task: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf(
+			"complete task %q: task not found or not processing",
+			id,
+		)
+	}
+
+	return nil
 }

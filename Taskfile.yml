@@ -19,6 +19,32 @@ tasks:
     cmds:
       - docker compose exec postgres pg_isready -U "{{.POSTGRES_USER}}" -d "{{.POSTGRES_DB}}"
 
+  test-db-up:
+    desc: Start the test database
+    cmds:
+      - docker compose up -d postgres-test
+
+  test-db-status:
+    desc: Check test PostgreSQL readiness
+    cmds:
+      - docker compose exec postgres-test pg_isready -U gotask -d gotask_test
+
+  test-db-migrate:
+    desc: Apply migrations to the test database
+    cmds:
+      - docker compose run --rm migrate -path=/migrations -database="postgres://gotask:gotask_test_password@postgres-test:5432/gotask_test?sslmode=disable" up
+
+  test-db-version:
+    desc: Show test database migration version
+    cmds:
+      - docker compose run --rm migrate -path=/migrations -database="postgres://gotask:gotask_test_password@postgres-test:5432/gotask_test?sslmode=disable" version
+
+  test-db-down:
+    desc: Stop test PostgreSQL without deleting data
+    cmds:
+      - docker compose stop postgres-test
+
+
   migrate-up:
     desc: Apply all pending migrations
     deps: [db-up]
@@ -37,11 +63,15 @@ tasks:
 
   test:
     desc: Run all Go tests
+    env:
+      TEST_DATABASE_URL: postgres://gotask:gotask_test_password@localhost:5433/gotask_test?sslmode=disable
     cmds:
       - go test ./...
 
   test-race:
     desc: Run tests with the race detector
+    env:
+      TEST_DATABASE_URL: postgres://gotask:gotask_test_password@localhost:5433/gotask_test?sslmode=disable
     cmds:
       - go test -race ./...
 
