@@ -127,16 +127,36 @@ func TestTaskRepository_CreateAndGetByID(t *testing.T) {
 	}
 }
 
+func TestTaskRepository_GetByID_Status(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewTaskRepository(db)
+
+	ctx := context.Background()
+	id := "test-status-retrieval"
+
+	insertTestTask(t, db, id, "processing")
+
+	got, err := repo.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("GetByID() error = %v", err)
+	}
+
+	if got.ID != id {
+		t.Errorf("ID = %q, want %q", got.ID, id)
+	}
+
+	if got.Status != "processing" {
+		t.Errorf("Status = %q, want %q", got.Status, "processing")
+	}
+}
+
 func TestTaskRepository_GetByID_NotFound(t *testing.T) {
 	db := openTestDB(t)
 	repo := NewTaskRepository(db)
 
-	_, err := repo.GetByID(context.Background(), "missing-task-001")
-	if err == nil {
-		t.Fatal("GetByID() expected an error for a missing task")
-	}
+	_, err := repo.GetByID(context.Background(), "nonexistent-task")
 	if !errors.Is(err, sql.ErrNoRows) {
-		t.Errorf("GetByID() error = %v, want an error wrapping sql.ErrNoRows", err)
+		t.Fatalf("GetByID() error = %v, want %v", err, sql.ErrNoRows)
 	}
 }
 

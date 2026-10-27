@@ -46,9 +46,9 @@ func (r *TaskRepository) GetByID(ctx context.Context, id string) (task.Task, err
 
 	err := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, type, payload FROM tasks WHERE id = $1`,
+		`SELECT id, type, payload, status FROM tasks WHERE id = $1`,
 		id,
-	).Scan(&t.ID, &t.Type, &payload)
+	).Scan(&t.ID, &t.Type, &payload, &t.Status)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
