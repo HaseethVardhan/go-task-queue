@@ -9,12 +9,13 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"net/http"
 
 	"github.com/HaseethVardhan/go-task-queue/internal/handler"
-	"github.com/HaseethVardhan/go-task-queue/internal/service"
 	"github.com/HaseethVardhan/go-task-queue/internal/storage"
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
 	"github.com/HaseethVardhan/go-task-queue/internal/worker"
+	"github.com/HaseethVardhan/go-task-queue/internal/api"
 )
 
 func main() {
@@ -40,7 +41,6 @@ func main() {
 	defer db.Close()
 
 	repo := storage.NewTaskRepository(db)
-	taskService := service.NewTaskService(repo)
 
 	registry := handler.NewRegistry()
 
@@ -65,19 +65,36 @@ func main() {
 	w := worker.New(1, repo, registry)
 	go w.Start(ctx)
 
-	newTask := task.Task{
-		ID:      fmt.Sprintf("demo-%d", time.Now().UnixNano()),
-		Type:    "demo",
-		Payload: json.RawMessage(`{"message":"Hello from GoTask"}`),
+	mux := http.NewServeMux()
+
+	apiHandler := api.NewHandler()
+	apiHandler.RegisterRoutes(mux)
+
+	server := api.NewServer(mux)
+
+	serverErr := make(chan error, 1)
+
+	go func() {
+		log.Printf("GoTask API listening on %s", server.Addr)
+		serverErr <- server.ListenAndServe()
+	}()
+
+	select {
+		case <- ctx.Done():
+			log.Println("Shutting down GoTask...")
+		
+		case err := <-serverErr:
+			if err != nil && err != http.ErrServerClosed {
+				log.Fatalf("HTTP server failed: %v", err)
+			}
 	}
 
-	if err := taskService.Submit(ctx, newTask); err != nil {
-		log.Fatalf("submit task: %v", err)
-	}
+	shutdownCtx, cancel := context.WithTimeout(
+		context.Background(),
+		5*time.Second,
+	)
+	defer cancel()
 
-	log.Printf("Submitted task %s", newTask.ID)
-	log.Println("GoTask is running. Press Ctrl+C to stop.")
-
-	<-ctx.Done()
-	log.Println("Shutting down GoTask...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown failed: %v", err)		}
 }
