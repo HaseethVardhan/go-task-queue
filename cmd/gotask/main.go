@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,10 +11,10 @@ import (
 
 	"github.com/HaseethVardhan/go-task-queue/internal/handler"
 	"github.com/HaseethVardhan/go-task-queue/internal/storage"
-	"github.com/HaseethVardhan/go-task-queue/internal/task"
 	"github.com/HaseethVardhan/go-task-queue/internal/worker"
 	"github.com/HaseethVardhan/go-task-queue/internal/api"
 	"github.com/HaseethVardhan/go-task-queue/internal/service"
+	"github.com/HaseethVardhan/go-task-queue/internal/simulation"
 )
 
 func main() {
@@ -45,23 +43,9 @@ func main() {
 
 	registry := handler.NewRegistry()
 
-	if err := registry.Register("demo", func(
-		ctx context.Context,
-		t task.Task,
-	) error {
-		var payload struct {
-			Message string `json:"message"`
-		}
-
-		if err := json.Unmarshal(t.Payload, &payload); err != nil {
-			return fmt.Errorf("decode demo payload: %w", err)
-		}
-
-		log.Printf("Executing task %s: %s", t.ID, payload.Message)
-		return nil
-	}); err != nil {
-		log.Fatalf("register demo handler: %v", err)
-	}
+	if err := simulation.RegisterHandlers(registry); err != nil {
+		log.Fatalf("register simulation handlers: %v", err)
+    }
 
 	w := worker.New(1, repo, registry)
 	go w.Start(ctx)
