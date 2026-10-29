@@ -13,6 +13,7 @@ import (
 type TaskRepository interface {
 	ClaimNext(ctx context.Context) (task.Task, bool, error)
 	Complete(ctx context.Context, id string) error
+	Fail(ctx context.Context, id string) error
 }
 
 type Worker struct {
@@ -79,11 +80,17 @@ func (w *Worker) processTask(ctx context.Context, t task.Task) {
 	h, err := w.Registry.Get(t.Type)
 	if err != nil {
 		fmt.Printf("Worker %d: cannot execute task %s: %v\n", w.ID, t.ID, err)
+		if failErr := w.Repo.Fail(ctx, t.ID); failErr != nil {
+			fmt.Printf("Worker %d: failing task %s failed: %v\n", w.ID, t.ID, failErr)
+		}
 		return
 	}
 
 	if err := h(ctx, t); err != nil {
 		fmt.Printf("Worker %d: task %s failed: %v\n", w.ID, t.ID, err)
+		if failErr := w.Repo.Fail(ctx, t.ID); failErr != nil {
+			fmt.Printf("Worker %d: failing task %s failed: %v\n", w.ID, t.ID, failErr)
+		}
 		return
 	}
 

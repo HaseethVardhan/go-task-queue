@@ -270,6 +270,54 @@ func TestTaskRepository_Complete_NotFound(t *testing.T) {
 	}
 }
 
+func TestTaskRepository_Fail(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewTaskRepository(db)
+	ctx := context.Background()
+
+	insertTestTask(t, db, "fail-test-001", "processing")
+
+	if err := repo.Fail(ctx, "fail-test-001"); err != nil {
+		t.Fatalf("Fail() error = %v", err)
+	}
+
+	var status string
+	err := db.QueryRowContext(
+		ctx,
+		`SELECT status FROM tasks WHERE id = $1`,
+		"fail-test-001",
+	).Scan(&status)
+	if err != nil {
+		t.Fatalf("query task status: %v", err)
+	}
+
+	if status != "failed" {
+		t.Errorf("status = %q, want %q", status, "failed")
+	}
+}
+
+func TestTaskRepository_Fail_InvalidStatus(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewTaskRepository(db)
+
+	insertTestTask(t, db, "fail-pending-001", "pending")
+
+	err := repo.Fail(context.Background(), "fail-pending-001")
+	if err == nil {
+		t.Fatal("Fail() expected an error for a pending task")
+	}
+}
+
+func TestTaskRepository_Fail_NotFound(t *testing.T) {
+	db := openTestDB(t)
+	repo := NewTaskRepository(db)
+
+	err := repo.Fail(context.Background(), "fail-missing-001")
+	if err == nil {
+		t.Fatal("Fail() expected an error for a missing task")
+	}
+}
+
 func TestTaskRepository_ClaimNext_DatabaseError(t *testing.T) {
 	// This checks a repository error without requiring a live database.
 	// A nil receiver is not a valid way to test database errors, so this

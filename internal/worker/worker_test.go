@@ -16,8 +16,10 @@ type mockTaskRepository struct {
 	mu          sync.Mutex
 	tasks       []task.Task
 	completed   []string
+	failed      []string
 	claimErr    error
 	completeErr error
+	failErr     error
 }
 
 func (m *mockTaskRepository) ClaimNext(
@@ -59,11 +61,33 @@ func (m *mockTaskRepository) Complete(
 	return nil
 }
 
+func (m *mockTaskRepository) Fail(
+	ctx context.Context,
+	id string,
+) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.failErr != nil {
+		return m.failErr
+	}
+
+	m.failed = append(m.failed, id)
+	return nil
+}
+
 func (m *mockTaskRepository) completedIDs() []string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	return append([]string(nil), m.completed...)
+}
+
+func (m *mockTaskRepository) failedIDs() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return append([]string(nil), m.failed...)
 }
 
 func newTestWorker(
@@ -143,6 +167,12 @@ func TestWorker_ProcessTask_HandlerError(t *testing.T) {
 	if got := repo.completedIDs(); len(got) != 0 {
 		t.Errorf("completed IDs = %v, want no completed tasks", got)
 	}
+
+	gotFailed := repo.failedIDs()
+	wantFailed := []string{"task-002"}
+	if !reflect.DeepEqual(gotFailed, wantFailed) {
+		t.Errorf("failed IDs = %v, want %v", gotFailed, wantFailed)
+	}
 }
 
 func TestWorker_ProcessTask_HandlerNotFound(t *testing.T) {
@@ -156,6 +186,42 @@ func TestWorker_ProcessTask_HandlerNotFound(t *testing.T) {
 
 	if got := repo.completedIDs(); len(got) != 0 {
 		t.Errorf("completed IDs = %v, want no completed tasks", got)
+	}
+
+	gotFailed := repo.failedIDs()
+	wantFailed := []string{"task-003"}
+	if !reflect.DeepEqual(gotFailed, wantFailed) {
+		t.Errorf("failed IDs = %v, want %v", gotFailed, wantFailed)
+	}
+}
+
+func TestWorker_ProcessTask_FailError(t *testing.T) {
+	repo := &mockTaskRepository{
+		failErr: errors.New("database unavailable"),
+	}
+	w, registry := newTestWorker(t, repo)
+
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		return errors.New("email delivery failed")
+	})
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	w.processTask(context.Background(), task.Task{
+		ID:   "task-006",
+		Type: "email",
+	})
+
+	if got := repo.completedIDs(); len(got) != 0 {
+		t.Errorf("completed IDs = %v, want no completed tasks", got)
+	}
+
+	if got := repo.failedIDs(); len(got) != 0 {
+		t.Errorf("failed IDs = %v, want no recorded failures", got)
 	}
 }
 
@@ -251,5 +317,56 @@ func TestWorker_Start_ClaimsAndProcessesTask(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("completed IDs = %v, want %v", got, want)
+	}
+}
+
+func TestWorker_Start_ClaimsAndFailsTask(t *testing.T) {
+	repo := &mockTaskRepository{
+		tasks: []task.Task{
+			{
+				ID:   "task-007",
+				Type: "email",
+			},
+		},
+	}
+
+	w, registry := newTestWorker(t, repo)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := registry.Register("email", func(
+		ctx context.Context,
+		got task.Task,
+	) error {
+		defer cancel()
+		return errors.New("simulated failure")
+	})
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		w.Start(ctx)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("worker did not stop after failing the task")
+	}
+
+	if got := repo.completedIDs(); len(got) != 0 {
+		t.Errorf("completed IDs = %v, want no completed tasks", got)
+	}
+
+	gotFailed := repo.failedIDs()
+	wantFailed := []string{"task-007"}
+
+	if !reflect.DeepEqual(gotFailed, wantFailed) {
+		t.Errorf("failed IDs = %v, want %v", gotFailed, wantFailed)
 	}
 }

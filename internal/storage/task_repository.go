@@ -123,3 +123,33 @@ func (r *TaskRepository) Complete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func (r *TaskRepository) Fail(ctx context.Context, id string) error {
+	result, err := r.db.ExecContext(
+		ctx,
+		`
+		UPDATE tasks
+		SET status = 'failed'
+		WHERE id = $1 AND status = 'processing'
+		`,
+		id,
+	)
+
+	if err != nil {
+		return fmt.Errorf("fail task: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check failed task: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf(
+			"fail task %q: task not found or not processing",
+			id,
+		)
+	}
+
+	return nil
+}
