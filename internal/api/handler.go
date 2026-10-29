@@ -28,7 +28,7 @@ type Handler struct {
 	taskGetter  TaskGetter
 }
 
-func NewHandler(taskService TaskSubmitter,  taskGetter TaskGetter) *Handler {
+func NewHandler(taskService TaskSubmitter, taskGetter TaskGetter) *Handler {
 	if taskService == nil {
 		panic("task service cannot be nil")
 	}

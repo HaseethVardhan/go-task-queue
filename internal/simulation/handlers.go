@@ -16,16 +16,16 @@ import (
 const maxDurationMs = 60_000
 
 type config struct {
-	MinDurationMs *int `json:"minDurationMs"`
-	MaxDurationMs    *int     `json:"maxDurationMs"`
+	MinDurationMs      *int     `json:"minDurationMs"`
+	MaxDurationMs      *int     `json:"maxDurationMs"`
 	FailureProbability *float64 `json:"failureProbability"`
 }
 
 type simulation struct {
-	name       string
-	minMs      int
-	maxMs      int
-	stages     []string
+	name   string
+	minMs  int
+	maxMs  int
+	stages []string
 }
 
 func RegisterHandlers(registry *handler.Registry) error {
