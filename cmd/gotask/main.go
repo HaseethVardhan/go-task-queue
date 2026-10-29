@@ -16,6 +16,7 @@ import (
 	"github.com/HaseethVardhan/go-task-queue/internal/task"
 	"github.com/HaseethVardhan/go-task-queue/internal/worker"
 	"github.com/HaseethVardhan/go-task-queue/internal/api"
+	"github.com/HaseethVardhan/go-task-queue/internal/service"
 )
 
 func main() {
@@ -67,7 +68,8 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	apiHandler := api.NewHandler()
+	taskService := service.NewTaskService(repo)
+	apiHandler := api.NewHandler(taskService)
 	apiHandler.RegisterRoutes(mux)
 
 	server := api.NewServer(mux)
