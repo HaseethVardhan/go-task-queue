@@ -1,0 +1,2 @@
+experiment,repetition,task_count,submission_concurrency,poll_interval_ms,timeout_s,failure_probability,worker_count,submission_attempts,accepted,submission_errors,completed,failed,timed_out,pending,processing,total_elapsed_s,submission_duration_s,accepted_rate,completed_throughput,avg_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,polling_errors,latency_observations
+worker-scaling,1,30,5,500.0,120.0,0.10,3,30,30,0,26,0,4,0,4,120.000,0.074,404.74,0.22,1934.3,2031.4,3515.1,3518.6,0,26

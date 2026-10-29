@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmark Summary</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  color: #1e293b;
+  background: #f8fafc;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.nav {
+  display: flex; gap: 16px; padding: 12px 0; margin-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0; flex-wrap: wrap;
+}
+.nav a {
+  color: #3b82f6; text-decoration: none; font-weight: 500; font-size: 14px;
+  padding: 4px 8px; border-radius: 4px;
+}
+.nav a:hover { background: #eff6ff; }
+.header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f766e 100%);
+  color: #fff; padding: 32px; border-radius: 12px; margin-bottom: 24px;
+}
+.header h1 { font-size: 28px; margin-bottom: 12px; }
+.meta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.tag {
+  background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px;
+  font-size: 13px;
+}
+.desc { width: 100%; margin-bottom: 8px; opacity: 0.9; }
+.section {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 24px; margin-bottom: 20px;
+}
+.section h2 {
+  font-size: 20px; color: #0f766e; margin-bottom: 16px;
+  padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;
+}
+.section h3 { font-size: 16px; color: #1e3a5f; margin: 16px 0 8px 0; }
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 16px;
+  font-size: 13px;
+}
+thead th {
+  background: #f1f5f9; color: #475569; padding: 10px 12px;
+  text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+tbody td {
+  padding: 8px 12px; border-bottom: 1px solid #f1f5f9;
+}
+tbody tr:hover { background: #f8fafc; }
+.chart-container { overflow-x: auto; margin: 16px 0; text-align: center; }
+.error-banner {
+  background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b;
+  padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;
+  font-weight: 500;
+}
+.status-ok {
+  display: inline-block; background: #ecfdf5; color: #065f46;
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.status-fail {
+  display: inline-block; background: #fef2f2; color: #991b1b;
+  padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 13px;
+}
+.warnings { list-style: none; }
+.warnings li {
+  padding: 8px 12px; background: #fffbeb; border-left: 3px solid #f59e0b;
+  margin-bottom: 6px; border-radius: 0 4px 4px 0; font-size: 13px;
+}
+.notes { list-style: none; }
+.notes li {
+  padding: 6px 12px; color: #64748b; font-size: 13px;
+  border-left: 3px solid #94a3b8; margin-bottom: 4px;
+}
+footer {
+  text-align: center; padding: 24px 0; color: #94a3b8; font-size: 12px;
+}
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 20px; text-align: center;
+}
+.card .value { font-size: 28px; font-weight: 700; color: #0f766e; }
+.card .label { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-pass { color: #065f46; }
+.status-warn { color: #92400e; }
+.status-error { color: #991b1b; }
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header { padding: 20px; }
+  .header h1 { font-size: 22px; }
+  table { font-size: 11px; }
+  thead th, tbody td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="nav">
+  <a href="#overview">Overview</a>
+  <a href="#results">Results</a>
+  <a href="#charts">Charts</a>
+</nav>
+<header class="header" id="overview">
+  <h1>Benchmark Run Summary</h1>
+  <div class="meta">
+    <span class="tag">2026-10-29 15:59:28</span>
+    <span class="tag">Duration: 17m0.1s</span>
+    <span class="tag">Suite: quick</span>
+    <span class="tag">Rev: 43f90c9</span>
+    <span class="tag">Workers: 3</span>
+  </div>
+</header>
+
+<div class="cards">
+<div class="card"><div class="value">5</div><div class="label">Experiments</div></div>
+<div class="card"><div class="value">4</div><div class="label">Passed</div></div>
+<div class="card"><div class="value">0</div><div class="label">Failed</div></div>
+<div class="card"><div class="value" style="color:#92400e">1</div><div class="label">Warnings</div></div>
+<div class="card"><div class="value">734</div><div class="label">Total Tasks</div></div>
+<div class="card"><div class="value">434</div><div class="label">Completed</div></div>
+<div class="card"><div class="value">17m0.1s</div><div class="label">Total Time</div></div>
+</div>
+
+<section class="section">
+<h2>Run Configuration</h2>
+<table>
+<thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>API URL</td><td>http://localhost:8080</td></tr>
+<tr><td>Suite</td><td>quick</td></tr>
+<tr><td>Git Revision</td><td>43f90c9</td></tr>
+<tr><td>Worker Count</td><td>3</td></tr>
+<tr><td>Results Directory</td><td>results\run-20261029-155928</td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section" id="results">
+<h2>Experiment Results</h2>
+<table>
+<thead><tr><th>#</th><th>Name</th><th>Status</th><th>Tasks</th><th>Completed</th><th>Throughput</th><th>P50</th><th>P95</th><th>Report</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>baseline</td><td><span class="status-pass">✓</span></td><td>20</td><td>19</td><td>0.16 tasks/s</td><td>1546.4 ms</td><td>2518.7 ms</td><td><a href="results\run-20261029-155928/baseline.html">view</a></td></tr>
+<tr><td>2</td><td>worker-scaling</td><td><span class="status-warn">⚠</span></td><td>30</td><td>26</td><td>0.22 tasks/s</td><td>2031.4 ms</td><td>3515.1 ms</td><td><a href="results\run-20261029-155928/worker-scaling.html">view</a></td></tr>
+<tr><td>3</td><td>burst</td><td><span class="status-pass">✓</span></td><td>70</td><td>63</td><td>0.14 tasks/s</td><td>1768.5 ms</td><td>2613.8 ms</td><td><a href="results\run-20261029-155928/burst.html">view</a></td></tr>
+<tr><td>4</td><td>workload-profiles</td><td><span class="status-pass">✓</span></td><td>90</td><td>79</td><td>0.22 tasks/s</td><td>2108.6 ms</td><td>3518.6 ms</td><td><a href="results\run-20261029-155928/workload-profiles.html">view</a></td></tr>
+<tr><td>5</td><td>sustained-load</td><td><span class="status-pass">✓</span></td><td>524</td><td>247</td><td>0.92 tasks/s</td><td>12891.4 ms</td><td>15013.2 ms</td><td><a href="results\run-20261029-155928/sustained-load.html">view</a></td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="section" id="charts">
+<h2>Throughput Comparison</h2>
+<div class="chart-container">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" width="700" height="320" style="font-family:sans-serif;background:#fff;">
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">Completed Throughput by Experiment</text>
+  <line x1="70" y1="40" x2="680" y2="40" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="44" text-anchor="end" font-size="10" fill="#64748b">2.0</text>
+  <line x1="70" y1="84" x2="680" y2="84" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="88" text-anchor="end" font-size="10" fill="#64748b">1.6</text>
+  <line x1="70" y1="128" x2="680" y2="128" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="132" text-anchor="end" font-size="10" fill="#64748b">1.2</text>
+  <line x1="70" y1="172" x2="680" y2="172" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="176" text-anchor="end" font-size="10" fill="#64748b">0.8</text>
+  <line x1="70" y1="216" x2="680" y2="216" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="220" text-anchor="end" font-size="10" fill="#64748b">0.4</text>
+  <line x1="70" y1="260" x2="680" y2="260" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="264" text-anchor="end" font-size="10" fill="#64748b">0.0</text>
+  <rect x="94" y="243" width="74" height="17" fill="#3b82f6" rx="3"/>
+  <text x="131" y="239" text-anchor="middle" font-size="10" fill="#1e293b">0.16</text>
+  <text x="131" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,131,276)">baseline</text>
+  <rect x="216" y="237" width="74" height="23" fill="#10b981" rx="3"/>
+  <text x="253" y="233" text-anchor="middle" font-size="10" fill="#1e293b">0.22</text>
+  <text x="253" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,253,276)">worker-scali…</text>
+  <rect x="338" y="245" width="74" height="15" fill="#6366f1" rx="3"/>
+  <text x="375" y="241" text-anchor="middle" font-size="10" fill="#1e293b">0.14</text>
+  <text x="375" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,375,276)">burst</text>
+  <rect x="460" y="237" width="74" height="23" fill="#14b8a6" rx="3"/>
+  <text x="497" y="233" text-anchor="middle" font-size="10" fill="#1e293b">0.22</text>
+  <text x="497" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,497,276)">workload-pro…</text>
+  <rect x="582" y="44" width="74" height="216" fill="#2563eb" rx="3"/>
+  <text x="619" y="40" text-anchor="middle" font-size="10" fill="#1e293b">1.97</text>
+  <text x="619" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,619,276)">sustained-lo…</text>
+  <line x1="70" y1="260" x2="680" y2="260" stroke="#94a3b8" stroke-width="1"/>
+  <line x1="70" y1="40" x2="70" y2="260" stroke="#94a3b8" stroke-width="1"/>
+  <text x="350" y="316" text-anchor="middle" font-size="10" fill="#64748b">tasks/s</text>
+</svg>
+</div>
+<h2 style="margin-top:24px">P50 Latency Comparison</h2>
+<div class="chart-container">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" width="700" height="320" style="font-family:sans-serif;background:#fff;">
+  <text x="350" y="22" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e293b">P50 Latency by Experiment</text>
+  <line x1="70" y1="40" x2="680" y2="40" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="44" text-anchor="end" font-size="10" fill="#64748b">20000.0</text>
+  <line x1="70" y1="84" x2="680" y2="84" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="88" text-anchor="end" font-size="10" fill="#64748b">16000.0</text>
+  <line x1="70" y1="128" x2="680" y2="128" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="132" text-anchor="end" font-size="10" fill="#64748b">12000.0</text>
+  <line x1="70" y1="172" x2="680" y2="172" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="176" text-anchor="end" font-size="10" fill="#64748b">8000.0</text>
+  <line x1="70" y1="216" x2="680" y2="216" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="220" text-anchor="end" font-size="10" fill="#64748b">4000.0</text>
+  <line x1="70" y1="260" x2="680" y2="260" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="64" y="264" text-anchor="end" font-size="10" fill="#64748b">0.0</text>
+  <rect x="94" y="243" width="74" height="17" fill="#3b82f6" rx="3"/>
+  <text x="131" y="239" text-anchor="middle" font-size="10" fill="#1e293b">1546.36</text>
+  <text x="131" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,131,276)">baseline</text>
+  <rect x="216" y="238" width="74" height="22" fill="#10b981" rx="3"/>
+  <text x="253" y="234" text-anchor="middle" font-size="10" fill="#1e293b">2031.36</text>
+  <text x="253" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,253,276)">worker-scali…</text>
+  <rect x="338" y="241" width="74" height="19" fill="#6366f1" rx="3"/>
+  <text x="375" y="237" text-anchor="middle" font-size="10" fill="#1e293b">1768.48</text>
+  <text x="375" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,375,276)">burst</text>
+  <rect x="460" y="237" width="74" height="23" fill="#14b8a6" rx="3"/>
+  <text x="497" y="233" text-anchor="middle" font-size="10" fill="#1e293b">2108.60</text>
+  <text x="497" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,497,276)">workload-pro…</text>
+  <rect x="582" y="119" width="74" height="141" fill="#2563eb" rx="3"/>
+  <text x="619" y="115" text-anchor="middle" font-size="10" fill="#1e293b">12891.43</text>
+  <text x="619" y="276" text-anchor="middle" font-size="10" fill="#475569" transform="rotate(-25,619,276)">sustained-lo…</text>
+  <line x1="70" y1="260" x2="680" y2="260" stroke="#94a3b8" stroke-width="1"/>
+  <line x1="70" y1="40" x2="70" y2="260" stroke="#94a3b8" stroke-width="1"/>
+  <text x="350" y="316" text-anchor="middle" font-size="10" fill="#64748b">ms</text>
+</svg>
+</div>
+</section>
+
+<footer>Generated 2026-10-29 16:16:28 IST</footer>
+</div>
+</body>
+</html>

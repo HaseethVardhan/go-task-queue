@@ -1,0 +1,81 @@
+{
+  "run_id": "20261029-155928",
+  "start_time": "2026-10-29T15:59:28.7258891+05:30",
+  "end_time": "2026-10-29T16:16:28.7780502+05:30",
+  "suite": "quick",
+  "worker_count": 3,
+  "git_revision": "43f90c9",
+  "api_url": "http://localhost:8080",
+  "experiments": [
+    {
+      "name": "baseline",
+      "status": "completed",
+      "task_count": 20,
+      "completed_tasks": 19,
+      "failed_tasks": 0,
+      "timed_out_tasks": 1,
+      "median_throughput": 0.15833283735572032,
+      "p50_latency_ms": 1546.363,
+      "p95_latency_ms": 2518.7101,
+      "p99_latency_ms": 2518.7101,
+      "worker_count": 3,
+      "repetitions": 1
+    },
+    {
+      "name": "worker-scaling",
+      "status": "completed",
+      "task_count": 30,
+      "completed_tasks": 26,
+      "failed_tasks": 0,
+      "timed_out_tasks": 4,
+      "median_throughput": 0.21666596250228853,
+      "p50_latency_ms": 2031.3637,
+      "p95_latency_ms": 3515.1334,
+      "p99_latency_ms": 3518.5927,
+      "worker_count": 3,
+      "repetitions": 1
+    },
+    {
+      "name": "burst",
+      "status": "skipped",
+      "task_count": 0,
+      "completed_tasks": 0,
+      "failed_tasks": 0,
+      "timed_out_tasks": 0,
+      "median_throughput": 0,
+      "p50_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "p99_latency_ms": 0,
+      "worker_count": 3,
+      "repetitions": 0
+    },
+    {
+      "name": "workload-profiles",
+      "status": "skipped",
+      "task_count": 0,
+      "completed_tasks": 0,
+      "failed_tasks": 0,
+      "timed_out_tasks": 0,
+      "median_throughput": 0,
+      "p50_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "p99_latency_ms": 0,
+      "worker_count": 3,
+      "repetitions": 0
+    },
+    {
+      "name": "sustained-load",
+      "status": "skipped",
+      "task_count": 0,
+      "completed_tasks": 0,
+      "failed_tasks": 0,
+      "timed_out_tasks": 0,
+      "median_throughput": 0,
+      "p50_latency_ms": 0,
+      "p95_latency_ms": 0,
+      "p99_latency_ms": 0,
+      "worker_count": 3,
+      "repetitions": 0
+    }
+  ]
+}

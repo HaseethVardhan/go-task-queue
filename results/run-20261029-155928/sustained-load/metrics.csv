@@ -1,0 +1,4 @@
+experiment,sub_experiment,repetition,task_count,submission_concurrency,poll_interval_ms,timeout_s,failure_probability,worker_count,submission_attempts,accepted,submission_errors,completed,failed,timed_out,pending,processing,total_elapsed_s,submission_duration_s,accepted_rate,completed_throughput,avg_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,polling_errors,latency_observations
+sustained-load,rate-5.0,1,50,5,500.0,60.0,0.10,3,75,75,0,55,0,20,0,10,60.000,15.007,5.00,0.92,13051.9,12891.4,15013.2,15314.4,0,55
+sustained-load,rate-10.0,1,50,5,500.0,60.0,0.10,3,150,150,0,74,0,76,0,10,60.001,15.012,9.99,1.23,15135.2,14723.5,18058.7,19263.3,0,74
+sustained-load,rate-20.0,1,50,5,500.0,60.0,0.10,3,299,299,0,118,0,181,0,10,60.001,15.005,19.93,1.97,17619.6,16699.0,23468.7,25224.0,0,118

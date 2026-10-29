@@ -1,0 +1,6 @@
+experiment,status,total_tasks,accepted,completed,failed,timed_out,throughput,submission_rate,avg_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,elapsed_s,error
+baseline,pass,20,20,19,0,1,0.16,454.69,1594.4,1546.4,2518.7,2518.7,120.001,
+worker-scaling,warn,30,30,26,0,4,0.22,404.74,1934.3,2031.4,3515.1,3518.6,120.002,
+burst,pass,70,70,63,0,7,0.14,40.83,1647.6,1768.5,2613.8,2613.8,240.002,
+workload-profiles,pass,90,90,79,0,11,0.22,523.21,2163.7,2108.6,3518.6,3591.9,360.002,
+sustained-load,pass,524,524,247,0,277,0.92,5.00,13051.9,12891.4,15013.2,15314.4,180.006,
