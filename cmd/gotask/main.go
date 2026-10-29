@@ -69,7 +69,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	taskService := service.NewTaskService(repo)
-	apiHandler := api.NewHandler(taskService)
+	apiHandler := api.NewHandler(taskService, repo)
 	apiHandler.RegisterRoutes(mux)
 
 	server := api.NewServer(mux)

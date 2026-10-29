@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -18,23 +19,34 @@ type TaskSubmitter interface {
 	Submit(ctx context.Context, t task.Task) error
 }
 
-type Handler struct {
-	taskService TaskSubmitter
+type TaskGetter interface {
+	GetByID(ctx context.Context, id string) (task.Task, error)
 }
 
-func NewHandler(taskService TaskSubmitter) *Handler {
+type Handler struct {
+	taskService TaskSubmitter
+	taskGetter  TaskGetter
+}
+
+func NewHandler(taskService TaskSubmitter,  taskGetter TaskGetter) *Handler {
 	if taskService == nil {
 		panic("task service cannot be nil")
 	}
 
+	if taskGetter == nil {
+		panic("task getter cannot be nil")
+	}
+
 	return &Handler{
 		taskService: taskService,
+		taskGetter:  taskGetter,
 	}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /health", h.health)
 	mux.HandleFunc("POST /tasks", h.submitTask)
+	mux.HandleFunc("GET /tasks/{id}", h.getTask)
 }
 
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +119,27 @@ func (h *Handler) submitTask(w http.ResponseWriter, r *http.Request) {
 		ID:     id,
 		Status: "pending",
 	})
+}
+
+func (h *Handler) getTask(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		http.Error(w, "task ID is required", http.StatusBadRequest)
+		return
+	}
+
+	t, err := h.taskGetter.GetByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "task not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "failed to retrieve task", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, t)
 }
 
 func generateTaskID() (string, error) {
